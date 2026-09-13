@@ -2,10 +2,21 @@
 <html lang="pt-BR" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AquaReef OS — Gestão & Monitoramento</title>
+    
+    <!-- PWA & Mobile Meta Tags -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#06b6d4">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AquaReef OS">
+
+    <!-- Tailwind CSS & Chart.js -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <style>
         .glass-card {
             background: rgba(15, 23, 42, 0.85);
@@ -21,15 +32,15 @@
         }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen antialiased flex flex-col font-sans">
+<body class="bg-slate-950 text-slate-100 min-h-screen antialiased flex flex-col font-sans select-none">
 
-    <!-- 1. TELA DE LOGIN / CADASTRO OBRIGATÓRIA -->
+    <!-- 1. TELA DE LOGIN / CADASTRO -->
     <div id="authScreen" class="fixed inset-0 z-50 bg-slate-950 flex items-center justify-center p-4">
         <div class="glass-card w-full max-w-md p-8 rounded-3xl border border-cyan-500/20 shadow-2xl shadow-cyan-950/60 space-y-6">
             <div class="text-center space-y-1">
                 <div class="inline-flex h-12 w-12 rounded-2xl bg-cyan-500/20 border border-cyan-400/30 items-center justify-center text-2xl mb-2">🪸</div>
                 <h1 class="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">AquaReef OS</h1>
-                <p class="text-xs text-slate-400">Acesse ou crie sua conta para gerenciar seu aquário</p>
+                <p class="text-xs text-slate-400">Entre para gerenciar e monitorar seu aquário</p>
             </div>
 
             <div class="space-y-4 text-xs">
@@ -46,20 +57,20 @@
             <div id="authMsg" class="text-[11px] text-center hidden font-semibold"></div>
 
             <div class="flex flex-col gap-2 pt-2">
-                <button onclick="handleLogin()" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs py-3 rounded-xl transition shadow-lg shadow-cyan-900/30">Acessar Meu Aquário</button>
+                <button onclick="handleLogin()" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs py-3 rounded-xl transition shadow-lg shadow-cyan-900/30">Acessar Aquário</button>
                 <button onclick="handleSignUp()" class="w-full bg-slate-900 hover:bg-slate-800 text-slate-300 font-semibold text-xs py-3 rounded-xl border border-slate-700 transition">Criar Nova Conta</button>
             </div>
         </div>
     </div>
 
-    <!-- 2. APLICAÇÃO PRINCIPAL (SÓ APARECE APÓS LOGIN) -->
+    <!-- 2. APLICAÇÃO PRINCIPAL -->
     <div id="appContainer" class="hidden flex-1 flex flex-col md:flex-row">
         
-        <!-- MENU LATERAL -->
+        <!-- MENU LATERAL / MOBILE -->
         <aside class="w-full md:w-64 glass-card border-r border-slate-800 p-5 flex flex-col gap-6 shrink-0">
             <div>
                 <h1 class="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">AquaReef OS</h1>
-                <p id="userDisplayEmail" class="text-[10px] text-cyan-400 font-mono truncate mt-0.5">Carregando...</p>
+                <p id="userDisplayEmail" class="text-[10px] text-cyan-400 font-mono truncate mt-0.5">Conectando...</p>
             </div>
 
             <nav class="flex flex-col gap-2 flex-1" id="navBar">
@@ -67,13 +78,16 @@
                     Display & Simulador
                 </button>
                 <button onclick="changeTab('fauna')" id="tabBtn-fauna" class="tab-btn w-full text-left px-4 py-3 rounded-xl text-xs font-semibold text-slate-400 hover:bg-slate-900">
-                    Fauna, Corais & Inverts
+                    Fauna & Corais
+                </button>
+                <button onclick="changeTab('parametros')" id="tabBtn-parametros" class="tab-btn w-full text-left px-4 py-3 rounded-xl text-xs font-semibold text-slate-400 hover:bg-slate-900">
+                    Testes & Gráficos 📊
                 </button>
                 <button onclick="changeTab('nutricao')" id="tabBtn-nutricao" class="tab-btn w-full text-left px-4 py-3 rounded-xl text-xs font-semibold text-slate-400 hover:bg-slate-900">
                     Nutrição & Rações
                 </button>
                 <button onclick="changeTab('manutencao')" id="tabBtn-manutencao" class="tab-btn w-full text-left px-4 py-3 rounded-xl text-xs font-semibold text-slate-400 hover:bg-slate-900">
-                    TPA & Parâmetros
+                    TPA & Manutenção
                 </button>
                 <button onclick="changeTab('config')" id="tabBtn-config" class="tab-btn w-full text-left px-4 py-3 rounded-xl text-xs font-semibold text-slate-400 hover:bg-slate-900">
                     Configurações & Meta
@@ -95,35 +109,35 @@
             </button>
         </aside>
 
-        <!-- ÁREA CENTRAL -->
+        <!-- ÁREA CENTRAL DE CONTEÚDO -->
         <main class="flex-1 p-4 md:p-8 overflow-y-auto max-w-6xl mx-auto w-full">
 
-            <!-- ABA 1: DISPLAY -->
+            <!-- 1. DISPLAY / SIMULADOR -->
             <div id="view-display" class="tab-content active space-y-6">
-                <div class="flex justify-between items-center">
+                <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
                     <div>
                         <h2 class="text-xl font-bold">Simulador Visual do Aquário</h2>
-                        <p class="text-xs text-slate-400">Display calibrado conforme a foto do seu aquário</p>
+                        <p class="text-xs text-slate-400">Peixes sincronizados nadando sobre a foto real</p>
                     </div>
-                    <label class="cursor-pointer bg-cyan-600 hover:bg-cyan-500 text-xs px-4 py-2.5 rounded-xl font-semibold transition">
+                    <label class="cursor-pointer bg-cyan-600 hover:bg-cyan-500 text-xs px-4 py-2.5 rounded-xl font-semibold transition text-center">
                         Carregar Foto do Aquário
                         <input type="file" id="bgPhotoInput" accept="image/*" class="hidden">
                     </label>
                 </div>
 
-                <div id="stageArea" class="relative w-full h-[400px] rounded-2xl glass-card overflow-hidden flex items-center justify-center border border-slate-800 bg-cover bg-center">
+                <div id="stageArea" class="relative w-full h-[420px] rounded-2xl glass-card overflow-hidden flex items-center justify-center border border-slate-800 bg-cover bg-center">
                     <p id="stageEmptyText" class="text-xs text-slate-500 text-center px-4">
-                        Nenhuma foto de fundo carregada para este usuário.<br>Clique no botão acima para personalizar seu display.
+                        Nenhuma foto de fundo carregada para este usuário.<br>Clique no botão acima para carregar o display.
                     </p>
                 </div>
             </div>
 
-            <!-- ABA 2: FAUNA -->
+            <!-- 2. FAUNA & CORAIS -->
             <div id="view-fauna" class="tab-content space-y-6">
                 <div class="flex justify-between items-center">
                     <div>
                         <h2 class="text-xl font-bold">Cadastro de Vidas</h2>
-                        <p class="text-xs text-slate-400">Registros protegidos e salvos na sua nuvem</p>
+                        <p class="text-xs text-slate-400">Registros em nuvem com fotos reais e de catálogo</p>
                     </div>
                     <button onclick="toggleModal(true)" class="bg-cyan-600 hover:bg-cyan-500 text-xs px-4 py-2.5 rounded-xl font-semibold transition">
                         + Adicionar Animal
@@ -132,12 +146,62 @@
 
                 <div id="faunaGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div id="emptyFaunaWarning" class="col-span-full py-16 text-center text-slate-500 text-xs">
-                        Nenhum animal cadastrado no seu aquário ainda.
+                        Nenhum animal cadastrado ainda.
                     </div>
                 </div>
             </div>
 
-            <!-- ABA 3: NUTRIÇÃO -->
+            <!-- 3. TESTES & PARÂMETROS COM GRÁFICO (NOVO) -->
+            <div id="view-parametros" class="tab-content space-y-6">
+                <div>
+                    <h2 class="text-xl font-bold">Parâmetros Químicos da Água</h2>
+                    <p class="text-xs text-slate-400">Monitore as variações e garanta a estabilidade do recife</p>
+                </div>
+
+                <!-- Formulário de Registro de Teste -->
+                <div class="glass-card p-5 rounded-2xl border border-slate-800 space-y-4">
+                    <h3 class="text-xs font-bold text-cyan-400 uppercase tracking-wider">Novo Teste de Água</h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
+                        <div>
+                            <label class="block text-slate-400 mb-1">Data</label>
+                            <input type="date" id="paramDate" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-slate-200">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-1">KH (dKH)</label>
+                            <input type="number" step="0.1" id="paramKh" placeholder="Ideal: 7.5 - 8.5" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-slate-200">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-1">Cálcio (ppm)</label>
+                            <input type="number" id="paramCa" placeholder="Ideal: 420" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-slate-200">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-1">Magnésio (ppm)</label>
+                            <input type="number" id="paramMg" placeholder="Ideal: 1350" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-slate-200">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-1">Nitrato (NO3)</label>
+                            <input type="number" step="0.1" id="paramNo3" placeholder="Ideal: 2 - 5" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-slate-200">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-1">Fosfato (PO4)</label>
+                            <input type="number" step="0.01" id="paramPo4" placeholder="Ideal: 0.03" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-slate-200">
+                        </div>
+                    </div>
+                    <button onclick="saveParameterRecord()" class="bg-cyan-600 hover:bg-cyan-500 text-xs px-6 py-2.5 rounded-xl font-semibold transition">
+                        Salvar Medição
+                    </button>
+                </div>
+
+                <!-- Gráfico de Tendência -->
+                <div class="glass-card p-5 rounded-2xl border border-slate-800 space-y-3">
+                    <h3 class="text-xs font-bold text-slate-300">Histórico de Estabilidade Química</h3>
+                    <div class="w-full h-64">
+                        <canvas id="paramsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. NUTRIÇÃO & RAÇÕES -->
             <div id="view-nutricao" class="tab-content space-y-6">
                 <h2 class="text-xl font-bold">Gestão Nutricional</h2>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -148,7 +212,7 @@
 
                     <div class="glass-card p-5 rounded-2xl border border-slate-800 space-y-3">
                         <h3 class="text-sm font-bold text-slate-200">Adicionar Ração</h3>
-                        <input type="text" id="foodName" placeholder="Nome / Marca da Ração" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-200">
+                        <input type="text" id="foodName" placeholder="Nome / Marca" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-200">
                         <select id="foodType" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-200">
                             <option value="Grânulos / Flocos">Grânulos / Flocos</option>
                             <option value="Algas / Nori">Algas / Nori</option>
@@ -161,7 +225,7 @@
                 </div>
             </div>
 
-            <!-- ABA 4: MANUTENÇÃO -->
+            <!-- 5. TPA & MANUTENÇÃO -->
             <div id="view-manutencao" class="tab-content space-y-6">
                 <h2 class="text-xl font-bold">Registro de TPAs</h2>
                 <div class="glass-card p-5 rounded-2xl border border-slate-800 space-y-4">
@@ -179,7 +243,7 @@
                 </div>
             </div>
 
-            <!-- ABA 5: CONFIGURAÇÕES E METAS -->
+            <!-- 6. CONFIGURAÇÕES & METAS -->
             <div id="view-config" class="tab-content space-y-6">
                 <div>
                     <h2 class="text-xl font-bold">Configurações do Aquário</h2>
@@ -189,7 +253,7 @@
                 <div class="glass-card p-6 rounded-2xl border border-slate-800 max-w-md space-y-4 text-xs">
                     <div>
                         <label class="block text-slate-300 font-semibold mb-1">Meta de Peixes Desejada</label>
-                        <input type="number" id="customMetaInput" placeholder="Ex: 15 ou 25" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-slate-200">
+                        <input type="number" id="customMetaInput" placeholder="Ex: 15" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-slate-200">
                     </div>
                     <div>
                         <label class="block text-slate-300 font-semibold mb-1">Volume Total do Sistema (Litros)</label>
@@ -203,7 +267,7 @@
         </main>
     </div>
 
-    <!-- MODAL CADASTRO -->
+    <!-- MODAL CADASTRO FAUNA -->
     <div id="faunaModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="glass-card w-full max-w-lg p-6 rounded-2xl border border-slate-700 space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 class="text-base font-bold text-cyan-400">Cadastrar Novo Habitante</h3>
@@ -220,7 +284,7 @@
                 </div>
 
                 <div>
-                    <label class="block text-cyan-400 font-semibold mb-1">Foto Real no Display (Contraprova):</label>
+                    <label class="block text-cyan-400 font-semibold mb-1">Foto Real no Aquário (Contraprova):</label>
                     <input type="file" id="realPhotoInput" accept="image/*" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-slate-300">
                 </div>
 
@@ -246,6 +310,7 @@
         let faunaList = [];
         let foodList = [];
         let tpaList = [];
+        let paramsChart = null;
         let userMeta = 0;
 
         const CATALOG_PRESETS = [
@@ -265,13 +330,9 @@
             { id: 'cm', name: 'Caranguejo Mithrax', latin: 'Mithraculus sculptus', category: 'Invertebrado', img: 'https://images.unsplash.com/photo-1546026423-cc4642628d2b?auto=format&fit=crop&w=600&q=80' }
         ];
 
-        // GESTÃO DE TELAS / ABAS
         function changeTab(targetId) {
-            const tabs = document.querySelectorAll('.tab-content');
-            tabs.forEach(tab => tab.classList.remove('active'));
-
-            const buttons = document.querySelectorAll('.tab-btn');
-            buttons.forEach(btn => {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.className = 'tab-btn w-full text-left px-4 py-3 rounded-xl text-xs font-semibold text-slate-400 hover:bg-slate-900';
             });
 
@@ -279,9 +340,12 @@
             const activeBtn = document.getElementById('tabBtn-' + targetId);
             if(activeView) activeView.classList.add('active');
             if(activeBtn) activeBtn.className = 'tab-btn w-full text-left px-4 py-3 rounded-xl text-xs font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30';
+            
+            if (targetId === 'parametros') {
+                loadParameters();
+            }
         }
 
-        // AUTENTICAÇÃO
         async function checkSession() {
             const { data: { session } } = await supabase.auth.getSession();
             if (session && session.user) {
@@ -321,7 +385,7 @@
                 msg.innerText = error.message;
                 msg.className = 'text-[11px] text-center text-rose-400 font-semibold block';
             } else {
-                msg.innerText = 'Conta criada com sucesso! Carregando...';
+                msg.innerText = 'Conta criada com sucesso!';
                 msg.className = 'text-[11px] text-center text-emerald-400 font-semibold block';
                 checkSession();
             }
@@ -332,9 +396,7 @@
             window.location.reload();
         }
 
-        // CARREGAR DADOS DO USUÁRIO
         async function loadUserData() {
-            // Carregar configurações de meta salvas
             const savedMeta = localStorage.getItem('reef_meta_' + currentUser.id);
             userMeta = savedMeta ? parseInt(savedMeta) : 0;
             document.getElementById('customMetaInput').value = userMeta || '';
@@ -349,7 +411,6 @@
                 document.getElementById('stageEmptyText').style.display = 'block';
             }
 
-            // Carregar Fauna
             const { data: faunaData } = await supabase.from('fauna').select('*').order('created_at', { ascending: false });
             faunaList = (faunaData || []).map(d => ({
                 id: d.id, name: d.nome, latin: d.latim, category: d.categoria,
@@ -358,15 +419,15 @@
             renderFauna();
             updateSimulation();
 
-            // Carregar Alimentos
             const { data: foodData } = await supabase.from('nutricao').select('*').order('created_at', { ascending: false });
             foodList = (foodData || []).map(f => ({ id: f.id, name: f.nome, type: f.tipo, freq: f.frequencia }));
             renderFood();
 
-            // Carregar TPAs
             const { data: tpaData } = await supabase.from('tpa').select('*').order('created_at', { ascending: false });
             tpaList = (tpaData || []).map(t => ({ id: t.id, date: t.data, liters: t.litros, sal: t.salinidade }));
             renderTpa();
+
+            loadParameters();
         }
 
         function saveUserSettings() {
@@ -379,7 +440,103 @@
             setTimeout(() => msg.classList.add('hidden'), 3000);
         }
 
-        // CARREGAR FOTO DE FUNDO
+        // --- MÓDULO DE PARÂMETROS & GRÁFICO ---
+        async function saveParameterRecord() {
+            const date = document.getElementById('paramDate').value || new Date().toISOString().split('T')[0];
+            const kh = parseFloat(document.getElementById('paramKh').value) || null;
+            const ca = parseFloat(document.getElementById('paramCa').value) || null;
+            const mg = parseFloat(document.getElementById('paramMg').value) || null;
+            const no3 = parseFloat(document.getElementById('paramNo3').value) || null;
+            const po4 = parseFloat(document.getElementById('paramPo4').value) || null;
+
+            await supabase.from('parametros').insert([{
+                id: Date.now(),
+                user_id: currentUser.id,
+                data: date,
+                kh, calcio: ca, magnesio: mg, nitrato: no3, fosfato: po4
+            }]);
+
+            // Limpa formulário
+            document.getElementById('paramKh').value = '';
+            document.getElementById('paramCa').value = '';
+            document.getElementById('paramMg').value = '';
+            document.getElementById('paramNo3').value = '';
+            document.getElementById('paramPo4').value = '';
+
+            loadParameters();
+        }
+
+        async function loadParameters() {
+            const { data: records } = await supabase.from('parametros').select('*').order('created_at', { ascending: true });
+            if (!records || records.length === 0) return;
+
+            const labels = records.map(r => r.data);
+            const khData = records.map(r => r.kh);
+            const caData = records.map(r => r.calcio);
+            const no3Data = records.map(r => r.nitrato);
+
+            const ctx = document.getElementById('paramsChart').getContext('2d');
+            if (paramsChart) paramsChart.destroy();
+
+            paramsChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'KH (dKH)',
+                            data: khData,
+                            borderColor: '#38bdf8',
+                            backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                            tension: 0.3,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Cálcio (ppm)',
+                            data: caData,
+                            borderColor: '#34d399',
+                            backgroundColor: 'rgba(52, 211, 153, 0.1)',
+                            tension: 0.3,
+                            yAxisID: 'y1'
+                        },
+                        {
+                            label: 'Nitrato (ppm)',
+                            data: no3Data,
+                            borderColor: '#f43f5e',
+                            backgroundColor: 'rgba(244, 63, 94, 0.1)',
+                            tension: 0.3,
+                            yAxisID: 'y'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            grid: { drawOnChartArea: false }
+                        },
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                        }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#94a3b8' } }
+                    }
+                }
+            });
+        }
+
+        // --- DISPLAY & SIMULADOR ---
         document.getElementById('bgPhotoInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if(file && currentUser) {
@@ -394,7 +551,6 @@
             }
         });
 
-        // MODAL E POVOAMENTO
         const selectEl = document.getElementById('speciesSelect');
         CATALOG_PRESETS.forEach(item => {
             const opt = document.createElement('option');
@@ -491,7 +647,6 @@
                 });
             }
 
-            // Atualizar Contador Dinâmico com a meta do usuário
             document.getElementById('counterText').innerText = `${peixesCount} / ${userMeta}`;
             const pct = userMeta > 0 ? Math.min((peixesCount / userMeta) * 100, 100) : 0;
             document.getElementById('counterBar').style.width = `${pct}%`;
@@ -525,7 +680,7 @@
             const name = document.getElementById('foodName').value;
             const type = document.getElementById('foodType').value;
             const freq = document.getElementById('foodFreq').value;
-            if(!name) return alert('Digite o nome da ração');
+            if(!name) return alert('Informe o nome da ração');
 
             await supabase.from('nutricao').insert([{ id: Date.now(), user_id: currentUser.id, nome: name, tipo: type, frequencia: freq }]);
             document.getElementById('foodName').value = '';

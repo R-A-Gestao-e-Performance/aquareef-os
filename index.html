@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AquaReef OS</title>
+    <title>AquaReef OS — Gestão & Monitoramento</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase JS Client v2 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         .glass-card {
             background: rgba(15, 23, 42, 0.75);
@@ -26,7 +29,7 @@
     <aside class="w-full md:w-64 glass-card border-r border-slate-800 p-5 flex flex-col gap-6 shrink-0">
         <div>
             <h1 class="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">AquaReef OS</h1>
-            <p class="text-[10px] text-slate-400 uppercase tracking-widest font-mono">Gestão & Monitoramento</p>
+            <p class="text-[10px] text-slate-400 uppercase tracking-widest font-mono">Nuvem Supabase Ativa</p>
         </div>
 
         <nav class="flex flex-col gap-2 flex-1" id="navBar">
@@ -58,7 +61,7 @@
         </div>
     </aside>
 
-    <!-- ÁREA CENTRAL DE TELAS -->
+    <!-- ÁREA CENTRAL -->
     <main class="flex-1 p-4 md:p-8 overflow-y-auto max-w-6xl mx-auto w-full">
 
         <!-- 1. DISPLAY / SIMULADOR -->
@@ -66,37 +69,36 @@
             <div class="flex justify-between items-center">
                 <div>
                     <h2 class="text-xl font-bold">Simulador Visual do Aquário</h2>
-                    <p class="text-xs text-slate-400">O simulador usa a foto do seu display como base e atualiza com os animais cadastrados</p>
+                    <p class="text-xs text-slate-400">Sincronizado diretamente com a sua base de dados</p>
                 </div>
                 <label class="cursor-pointer bg-cyan-600 hover:bg-cyan-500 text-xs px-4 py-2.5 rounded-xl font-semibold transition">
-                    Carregar Foto Real do Aquário
+                    Carregar Foto do Display
                     <input type="file" id="bgPhotoInput" accept="image/*" class="hidden">
                 </label>
             </div>
 
             <div id="stageArea" class="relative w-full h-[400px] rounded-2xl glass-card overflow-hidden flex items-center justify-center border border-slate-800 bg-cover bg-center">
                 <p id="stageEmptyText" class="text-xs text-slate-500 text-center px-4">
-                    Nenhuma foto de fundo carregada.<br>Clique no botão acima para colocar a foto do seu aquário.
+                    Nenhuma foto de fundo carregada.<br>Clique no botão acima para carregar a foto do aquário.
                 </p>
             </div>
         </div>
 
-        <!-- 2. FAUNA, CORAIS & INVERTEBRADOS -->
+        <!-- 2. FAUNA & CORAIS -->
         <div id="view-fauna" class="tab-content space-y-6">
             <div class="flex justify-between items-center">
                 <div>
                     <h2 class="text-xl font-bold">Cadastro de Vidas</h2>
-                    <p class="text-xs text-slate-400">Seus registros reais comparados com fotos de referência de catálogo</p>
+                    <p class="text-xs text-slate-400">Registros gravados no banco Supabase</p>
                 </div>
                 <button onclick="toggleModal(true)" class="bg-cyan-600 hover:bg-cyan-500 text-xs px-4 py-2.5 rounded-xl font-semibold transition">
                     + Adicionar Animal
                 </button>
             </div>
 
-            <!-- Listagem dinâmica (começa zerada) -->
             <div id="faunaGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div id="emptyFaunaWarning" class="col-span-full py-16 text-center text-slate-500 text-xs">
-                    Nenhum animal cadastrado ainda. Clique em "+ Adicionar Animal" para começar.
+                    Carregando dados da nuvem...
                 </div>
             </div>
         </div>
@@ -107,8 +109,8 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="md:col-span-2 glass-card p-5 rounded-2xl border border-slate-800">
                     <h3 class="text-sm font-bold text-cyan-400 mb-3">Rações Cadastradas</h3>
-                    <div id="foodList" class="text-xs text-slate-500 py-8 text-center">
-                        Nenhum alimento cadastrado ainda.
+                    <div id="foodList" class="text-xs text-slate-500 py-4">
+                        Carregando...
                     </div>
                 </div>
 
@@ -122,7 +124,7 @@
                         <option value="Congelado">Congelado</option>
                     </select>
                     <input type="text" id="foodFreq" placeholder="Frequência (ex: 2x ao dia)" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-200">
-                    <button onclick="addFood()" class="w-full bg-cyan-600 hover:bg-cyan-500 text-xs font-semibold py-2.5 rounded-xl transition">Salvar Alimento</button>
+                    <button onclick="addFood()" class="w-full bg-cyan-600 hover:bg-cyan-500 text-xs font-semibold py-2.5 rounded-xl transition">Salvar na Nuvem</button>
                 </div>
             </div>
         </div>
@@ -136,27 +138,27 @@
                     <input type="number" id="tpaLitersInput" placeholder="Litros Trocados" class="bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-200">
                     <input type="text" id="tpaSalinityInput" placeholder="Salinidade (ex: 1025)" class="bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-200">
                 </div>
-                <button onclick="addTpa()" class="bg-emerald-600 hover:bg-emerald-500 text-xs px-6 py-2.5 rounded-xl font-semibold transition">Registrar Troca Parcial</button>
+                <button onclick="addTpa()" class="bg-emerald-600 hover:bg-emerald-500 text-xs px-6 py-2.5 rounded-xl font-semibold transition">Registrar Troca</button>
             </div>
 
             <div class="glass-card p-5 rounded-2xl border border-slate-800">
                 <h3 class="text-sm font-bold text-slate-200 mb-3">Registros Salvos</h3>
-                <div id="tpaHistory" class="text-xs text-slate-500 py-6 text-center">Nenhum registro de TPA efetuado.</div>
+                <div id="tpaHistory" class="text-xs text-slate-500 py-4">Carregando histórico...</div>
             </div>
         </div>
 
-        <!-- 5. CATÁLOGO REEF-SAFE (COMPATÍVEIS PARA ADICIONAR) -->
+        <!-- 5. CATÁLOGO REEF-SAFE -->
         <div id="view-catalogo" class="tab-content space-y-6">
             <div>
                 <h2 class="text-xl font-bold">Catálogo Reef-Safe Compatível</h2>
-                <p class="text-xs text-slate-400">Espécies filtradas que não comem corais, ideais para a meta de 25 peixes</p>
+                <p class="text-xs text-slate-400">Espécies filtradas que não comem corais</p>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="presetCatalogGrid"></div>
         </div>
 
     </main>
 
-    <!-- MODAL CADASTRO DE ANIMAL COM FOTO DE CATÁLOGO AUTOMÁTICA -->
+    <!-- MODAL CADASTRO COM FOTO AUTOMÁTICA -->
     <div id="faunaModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="glass-card w-full max-w-lg p-6 rounded-2xl border border-slate-700 space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 class="text-base font-bold text-cyan-400">Cadastrar Novo Habitante</h3>
@@ -167,13 +169,11 @@
                     <select id="speciesSelect" onchange="updateCatalogPhotoPreview()" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-slate-200"></select>
                 </div>
 
-                <!-- Preview da Foto Oficial de Catálogo -->
                 <div class="space-y-1">
-                    <span class="text-slate-400 block font-semibold">Foto Oficial de Catálogo (Referência):</span>
+                    <span class="text-slate-400 block font-semibold">Foto Oficial de Referência:</span>
                     <img id="catalogPreviewImg" src="" class="w-full h-36 object-cover rounded-xl border border-slate-700">
                 </div>
 
-                <!-- Foto Real do Usuário (Contraprova) -->
                 <div>
                     <label class="block text-cyan-400 font-semibold mb-1">Foto Real no Aquário (Contraprova):</label>
                     <input type="file" id="realPhotoInput" accept="image/*" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-slate-300">
@@ -181,19 +181,24 @@
 
                 <div>
                     <label class="block text-slate-400 mb-1">Observações / Comportamento:</label>
-                    <input type="text" id="faunaNotes" placeholder="Ex: Acomodado na gaiola de aclimatação" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-slate-200">
+                    <input type="text" id="faunaNotes" placeholder="Ex: Ambientando na gaiola de adaptação" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-slate-200">
                 </div>
             </div>
 
             <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
                 <button onclick="toggleModal(false)" class="px-4 py-2 rounded-xl text-xs text-slate-400 hover:text-slate-200">Cancelar</button>
-                <button onclick="saveFaunaItem()" class="bg-cyan-600 hover:bg-cyan-500 px-5 py-2 rounded-xl text-xs font-semibold text-white">Salvar Animal</button>
+                <button onclick="saveFaunaItem()" class="bg-cyan-600 hover:bg-cyan-500 px-5 py-2 rounded-xl text-xs font-semibold text-white">Salvar na Nuvem</button>
             </div>
         </div>
     </div>
 
     <script>
-        // BASE DE DADOS DE CATÁLOGO (FOTOS NÍTIDAS REAIS DA INTERNET)
+        // CONEXÃO OFICIAL SUPABASE
+        const SUPABASE_URL = "https://ikdtarchdomzrptxckud.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_Hpf_m7YyFFmIVcmfUAK6cA_TFcFcNez";
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // CATÁLOGO DE ESPÉCIES REEF-SAFE COM FOTOS EM ALTA RESOLUÇÃO
         const CATALOG_PRESETS = [
             { id: 'bt', name: 'Blue Tang', latin: 'Acanthurus coeruleus', category: 'Peixe', img: 'https://images.unsplash.com/photo-1524704654690-b56c05c78a00?auto=format&fit=crop&w=600&q=80' },
             { id: 'yt', name: 'Yellow Tang', latin: 'Zebrasoma flavescens', category: 'Peixe', img: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=600&q=80' },
@@ -211,7 +216,6 @@
             { id: 'cm', name: 'Caranguejo Mithrax', latin: 'Mithraculus sculptus', category: 'Invertebrado', img: 'https://images.unsplash.com/photo-1546026423-cc4642628d2b?auto=format&fit=crop&w=600&q=80' }
         ];
 
-        // Estado da Aplicação (Inicia rigorosamente ZERADO)
         let faunaList = [];
         let foodList = [];
         let tpaList = [];
@@ -229,7 +233,7 @@
             if(activeBtn) activeBtn.className = 'tab-btn w-full text-left px-4 py-3 rounded-xl text-xs font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30';
         }
 
-        // CARREGAMENTO DA FOTO DO AQUÁRIO
+        // CARREGAR FUNDO DO AQUÁRIO
         document.getElementById('bgPhotoInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if(file) {
@@ -238,12 +242,13 @@
                     const stage = document.getElementById('stageArea');
                     stage.style.backgroundImage = `url('${evt.target.result}')`;
                     document.getElementById('stageEmptyText').style.display = 'none';
+                    localStorage.setItem('reef_bg_custom', evt.target.result);
                 };
                 reader.readAsDataURL(file);
             }
         });
 
-        // POVOAR MODAL COM O CATÁLOGO
+        // POVOAR SELECT COM O CATÁLOGO
         const selectEl = document.getElementById('speciesSelect');
         CATALOG_PRESETS.forEach(item => {
             const opt = document.createElement('option');
@@ -262,8 +267,41 @@
             document.getElementById('faunaModal').classList.toggle('hidden', !open);
         }
 
-        // SALVAR ANIMAL
-        function saveFaunaItem() {
+        // --- INTEGRAÇÃO COM A NUVEM SUPABASE ---
+
+        async function fetchAllData() {
+            // 1. Carregar Fauna
+            const { data: faunaData } = await supabase.from('fauna').select('*').order('created_at', { ascending: false });
+            if (faunaData) {
+                faunaList = faunaData.map(d => ({
+                    id: d.id,
+                    name: d.nome,
+                    latin: d.latim,
+                    category: d.categoria,
+                    catalogImg: d.foto_catalogo,
+                    realImg: d.foto_real,
+                    notes: d.observacoes
+                }));
+                renderFauna();
+                updateSimulation();
+            }
+
+            // 2. Carregar Rações
+            const { data: foodData } = await supabase.from('nutricao').select('*').order('created_at', { ascending: false });
+            if (foodData) {
+                foodList = foodData.map(f => ({ id: f.id, name: f.nome, type: f.tipo, freq: f.frequencia }));
+                renderFood();
+            }
+
+            // 3. Carregar TPAs
+            const { data: tpaData } = await supabase.from('tpa').select('*').order('created_at', { ascending: false });
+            if (tpaData) {
+                tpaList = tpaData.map(t => ({ id: t.id, date: t.data, liters: t.litros, sal: t.salinidade }));
+                renderTpa();
+            }
+        }
+
+        async function saveFaunaItem() {
             const selected = CATALOG_PRESETS.find(p => p.id === selectEl.value);
             const notes = document.getElementById('faunaNotes').value;
             const photoInput = document.getElementById('realPhotoInput');
@@ -271,41 +309,48 @@
             let realPhotoUrl = selected.img;
             if(photoInput.files && photoInput.files[0]) {
                 const reader = new FileReader();
-                reader.onload = function(evt) {
-                    finalizarCadastro(selected, evt.target.result, notes);
+                reader.onload = async function(evt) {
+                    await sendFaunaToSupabase(selected, evt.target.result, notes);
                 };
                 reader.readAsDataURL(photoInput.files[0]);
             } else {
-                finalizarCadastro(selected, null, notes);
+                await sendFaunaToSupabase(selected, null, notes);
             }
         }
 
-        function finalizarCadastro(specie, realImg, notes) {
-            const item = {
-                id: Date.now(),
-                name: specie.name,
-                latin: specie.latin,
-                category: specie.category,
-                catalogImg: specie.img,
-                realImg: realImg,
-                notes: notes || 'Sem observações'
+        async function sendFaunaToSupabase(specie, realImg, notes) {
+            const newId = Date.now();
+            const payload = {
+                id: newId,
+                nome: specie.name,
+                latim: specie.latin,
+                categoria: specie.category,
+                foto_catalogo: specie.img,
+                foto_real: realImg || specie.img,
+                observacoes: notes || 'Sem observações'
             };
-            faunaList.push(item);
+
+            await supabase.from('fauna').insert([payload]);
             toggleModal(false);
-            renderFauna();
-            updateSimulation();
+            await fetchAllData();
         }
 
-        // RENDERIZAR LISTA DE FAUNA
+        async function removerAnimal(id) {
+            await supabase.from('fauna').delete().eq('id', id);
+            await fetchAllData();
+        }
+
         function renderFauna() {
             const grid = document.getElementById('faunaGrid');
             const emptyWarning = document.getElementById('emptyFaunaWarning');
             if(faunaList.length === 0) {
+                emptyWarning.innerText = 'Nenhum animal cadastrado ainda. Clique em "+ Adicionar Animal" para começar.';
                 emptyWarning.style.display = 'block';
+                document.getElementById('counterText').innerText = `0 / 25`;
+                document.getElementById('counterBar').style.width = `0%`;
                 return;
             }
             emptyWarning.style.display = 'none';
-
             grid.innerHTML = '';
             let peixesCount = 0;
 
@@ -337,19 +382,11 @@
                 grid.appendChild(card);
             });
 
-            // Atualizar Meta de 25 peixes
             document.getElementById('counterText').innerText = `${peixesCount} / 25`;
             const pct = Math.min((peixesCount / 25) * 100, 100);
             document.getElementById('counterBar').style.width = `${pct}%`;
         }
 
-        function removerAnimal(id) {
-            faunaList = faunaList.filter(a => a.id !== id);
-            renderFauna();
-            updateSimulation();
-        }
-
-        // ATUALIZAR SIMULADOR DO DISPLAY
         function updateSimulation() {
             const stage = document.getElementById('stageArea');
             document.querySelectorAll('.fish-sim').forEach(f => f.remove());
@@ -375,14 +412,24 @@
         }
 
         // NUTRIÇÃO
-        function addFood() {
+        async function addFood() {
             const name = document.getElementById('foodName').value;
             const type = document.getElementById('foodType').value;
             const freq = document.getElementById('foodFreq').value;
             if(!name) return alert('Digite o nome da ração');
 
-            foodList.push({ name, type, freq });
+            await supabase.from('nutricao').insert([{ id: Date.now(), nome: name, tipo: type, frequencia: freq }]);
+            document.getElementById('foodName').value = '';
+            document.getElementById('foodFreq').value = '';
+            await fetchAllData();
+        }
+
+        function renderFood() {
             const listEl = document.getElementById('foodList');
+            if(foodList.length === 0) {
+                listEl.innerHTML = '<div class="py-4 text-center">Nenhum alimento cadastrado ainda.</div>';
+                return;
+            }
             listEl.innerHTML = '';
             foodList.forEach(f => {
                 const row = document.createElement('div');
@@ -390,19 +437,25 @@
                 row.innerHTML = `<div><strong class="text-sm text-slate-200">${f.name}</strong><p class="text-[11px] text-slate-400">${f.type}</p></div><span class="text-xs text-cyan-400 font-mono">${f.freq}</span>`;
                 listEl.appendChild(row);
             });
-            document.getElementById('foodName').value = '';
-            document.getElementById('foodFreq').value = '';
         }
 
         // TPA
-        function addTpa() {
+        async function addTpa() {
             const date = document.getElementById('tpaDateInput').value;
             const liters = document.getElementById('tpaLitersInput').value;
             const sal = document.getElementById('tpaSalinityInput').value;
             if(!liters) return alert('Informe os litros');
 
-            tpaList.unshift({ date: date || 'Hoje', liters, sal: sal || '1025' });
+            await supabase.from('tpa').insert([{ id: Date.now(), data: date || 'Hoje', litros: liters, salinidade: sal || '1025' }]);
+            await fetchAllData();
+        }
+
+        function renderTpa() {
             const histEl = document.getElementById('tpaHistory');
+            if(tpaList.length === 0) {
+                histEl.innerHTML = '<div class="py-4 text-center">Nenhum registro de TPA efetuado.</div>';
+                return;
+            }
             histEl.innerHTML = '';
             tpaList.forEach(t => {
                 const row = document.createElement('div');
@@ -426,6 +479,16 @@
                 <p class="text-[10px] text-slate-400 italic">${p.latin}</p>
             `;
             catalogGrid.appendChild(card);
+        });
+
+        // INICIALIZAÇÃO
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedBg = localStorage.getItem('reef_bg_custom');
+            if(savedBg) {
+                document.getElementById('stageArea').style.backgroundImage = `url('${savedBg}')`;
+                document.getElementById('stageEmptyText').style.display = 'none';
+            }
+            fetchAllData();
         });
     </script>
 </body>
